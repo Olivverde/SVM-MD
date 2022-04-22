@@ -15,9 +15,17 @@ from reader import Reader
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import cross_val_score
+from sklearn.metrics import  confusion_matrix
 from sklearn.model_selection import KFold
 from sklearn.svm import SVC
 from sklearn.svm import SVR
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.model_selection import cross_validate, cross_val_predict
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn import set_config
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
 from sklearn.model_selection import GridSearchCV
 from sklearn import datasets, metrics
 from sklearn.linear_model import LinearRegression
@@ -281,6 +289,41 @@ class main(object):
         #print(self.df.shape)
         #print(self.df.describe())
         #print(self.df.groupby('SaleRange').size())
+
+    def prep(self):
+        X_train, X_test, y_train, y_test, X, y = self.train_test()
+        numeric_preprocessor = Pipeline(
+            steps=[("imputer", SimpleImputer(strategy="median")), ("scaler", StandardScaler())]
+        )
+        # Se preparan los preprocesadores
+        categorical_preprocessor = OneHotEncoder(handle_unknown="ignore")
+        #Se transforman las colunas usando los preprocesadores
+        preprocesador = ColumnTransformer([
+            ('one_hot_encoder',categorical_preprocessor,nombre_categoricas),
+            ('numerico', numeric_preprocessor,nombre_numericas)
+        ],remainder="passthrough")
+        modelo = make_pipeline(preprocesador, SVC(kernel="linear"))
+
+        # Esto nos permite ver dentro del modelo
+        set_config(display='diagram')
+
+        _=modelo.fit(X_train,y_train)
+        modelo.score(X_test, y_test)
+
+        target_pred = modelo.predict(data_test)
+        print(target_pred)
+        print ("Accuracy:",metrics.accuracy_score(target_test, target_pred))
+        print ("Precision:", metrics.precision_score(target_test,target_pred,average='weighted') )
+        print ("Recall: ", metrics.recall_score(target_test,target_pred,average='weighted'))
+
+        confusion_matrix(target_pred, target_test)
+
+        cv = 10
+        cv_results = cross_validate(modelo,data, target, cv=cv)
+        cv_results = pd.DataFrame(cv_results)
+        print("accuracy: "+cv_results['test_score'].mean())
+        target_pred = cross_val_predict(modelo, data, target, cv = cv)
+        confusion_matrix(target, target_pred)
 
     def SVM(self):
         X_train, X_test, y_train, y_test, X, y = self.train_test()
