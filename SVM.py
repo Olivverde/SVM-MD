@@ -8,6 +8,7 @@ from sklearn import metrics
 import statsmodels.api as sm
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import make_pipeline
 from reader import Reader
@@ -15,6 +16,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
+from sklearn.svm import SVC
+from sklearn.svm import SVR
+from sklearn.model_selection import GridSearchCV
 from sklearn import datasets, metrics
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error,r2_score
@@ -70,18 +74,15 @@ class main(object):
     
     def dummification(self):
         df = self.groupBy_ResponseVar()
-        dummies = pd.get_dummies(df['SaleRange'])
-        df = pd.concat([df, dummies], axis=1)
-
+        self.df = df.copy()
         return df
 
     def train_test(self):
         df = self.dummification()
-        y = df.pop('Low')
+        y = df.pop('SaleRange')
         X = df[['LotArea','OverallQual', 'TotRmsAbvGrd', 'GarageCars', 'FullBath']]
         random.seed(123)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, train_size=0.7)
-
         return  X_train, X_test, y_train, y_test, X, y
 
     def normalizeData(self):
@@ -275,6 +276,18 @@ class main(object):
         print('Matriz de confusión para detectar Precio Low\n',cm)
         print('Accuracy: ',accuracy)
 
+    def explore(self):
+        self.train_test()
+        #print(self.df.shape)
+        #print(self.df.describe())
+        #print(self.df.groupby('SaleRange').size())
+
+    def SVM(self):
+        X_train, X_test, y_train, y_test, X, y = self.train_test()
+        
+
+
+
 driver = main('train.csv')
-driver.logReg()
+driver.explore()
 
