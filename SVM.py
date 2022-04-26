@@ -15,7 +15,7 @@ from reader import Reader
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_validate
 from sklearn.model_selection import cross_val_score
-from sklearn.metrics import  confusion_matrix
+from sklearn.metrics import  classification_report, confusion_matrix
 from sklearn.model_selection import KFold
 from sklearn.svm import SVC
 from sklearn.svm import SVR
@@ -327,13 +327,116 @@ class main(object):
         print("accuracy: "+str(cv_results['test_score'].mean()))
         target_pred = cross_val_predict(modelo, X, y, cv = cv)
         confusion_matrix(y, target_pred)
+        
+        # print(modelo.get_params().keys())
+        return preprocesador 
 
     def SVM(self):
         X_train, X_test, y_train, y_test, X, y = self.train_test()
+        preprocesador = self.prep()
+        modelo = make_pipeline(preprocesador, SVC(kernel="poly"))
+        _= modelo.fit(X_train, y_train)
+        # param_grid = {'C': [0.1, 1, 10, 100, 1000],
+        #       'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
+        #       'kernel': ['rbf']}
+        
+        # grid = GridSearchCV(SVC(), param_grid, refit = True, verbose = 3)
+        # grid.fit(X_train, y_train)
+        
+        
+        # # print best parameter after tuning
+        # print(grid.best_params_)
+        
+        # # print how our model looks after hyper-parameter tuning
+        # print(grid.best_estimator_)
+        
+        param_grid = {
+        'svc__C': (0.01, 0.1, 1, 5,16,32),
+        'svc__degree':(2,3,5,7)
+        }
+        # param_grid = {'C': [0.1, 1, 10, 100, 1000],
+        #       'gamma': [1, 0.1, 0.01, 0.001, 0.0001],
+        #       'kernel': ['rbf']}
+        model_grid_search = GridSearchCV(modelo, param_grid=param_grid,
+                                        n_jobs=2, cv=10)
+        model_grid_search.fit(X_train, y_train)
+        accuracy = model_grid_search.score(X_test, y_test)
+        print("Accuracy: ",accuracy)
+        model_grid_search.best_params_
+            
+         
+        
+    def numericas_categoricas(self):
+        df = self.dummification()
+        # print(df.describe())
+        print(df['SaleRange'])
+        g = sns.boxplot(x = 'SaleRange', y = 'SalePrice', hue = 'OverallQual', data = df, palette=['#03A9F4','#FF5722','#CDDC39'], linewidth=0.3)
+        g.set_xlabel('Sale range')
+        g.set_ylabel('Sale price')
+        plt.show()
+        
+    def SVM_poly(self):
+        X_train, X_test, y_train, y_test, X, y = self.train_test()
+        preprocesador = self.prep()
+        
+        modelo = make_pipeline(preprocesador, SVC(kernel='poly'))
+        modelo.fit(X_train, y_train)
+        
+        # y_pred = modelo.predict(X_test)
+        # print(confusion_matrix(y_test, y_pred))
+        # print(classification_report(y_test, y_pred))    
+
+        param_grid = {
+        'svc__C': (0.01, 0.1, 1, 5,16,32),
+        'svc__degree':(2,3,5,7)
+        }
+        model_grid_search = GridSearchCV(modelo, param_grid=param_grid,
+                                        n_jobs=2, cv=10)
+        model_grid_search.fit(X_train, y_train)
+        accuracy = model_grid_search.score(X_test, y_test)
+        print("Accuracy: ",accuracy)
+        model_grid_search.best_params_
+        
+        print("\nPredicción de la variable respuesta\n")
+        y_pred = modelo.predict(X_test)
+        print(confusion_matrix(y_test, y_pred))
+        print(classification_report(y_test, y_pred)) 
+        
+    def SVM_rbf(self):
+        X_train, X_test, y_train, y_test, X, y = self.train_test()
+        preprocesador = self.prep()
+        
+        modelo = make_pipeline(preprocesador, SVC(kernel='rbf'))
+        modelo.fit(X_train, y_train)   
+
+        param_grid = {
+        'svc__C': (0.01, 0.1, 1, 5,16,32),
+        'svc__gamma':(0.0000000002,0.00002,0.01,0.1,20,200)
+        }
+        model_grid_search = GridSearchCV(modelo, param_grid=param_grid,
+                                        n_jobs=2, cv=10)
+        model_grid_search.fit(X_train, y_train)
+        accuracy = model_grid_search.score(X_test, y_test)
+        print("Accuracy: ",accuracy)
+        model_grid_search.best_params_
+        
+        print("\nPredicción de la variable respuesta\n")
+        y_pred = modelo.predict(X_test)
+        print(confusion_matrix(y_test, y_pred))
+        print(classification_report(y_test, y_pred)) 
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
 
 
 
 driver = main('train.csv')
-driver.prep()
+driver.SVM_poly()
 
