@@ -57,7 +57,7 @@ class main(object):
     def data_classification(self):
         df = self.df
 
-        column_names = ['SalePrice','LotArea','OverallQual', 'TotRmsAbvGrd', 'GarageCars', 'FullBath']
+        column_names = ['SalePrice','LotArea','OverallQual', 'TotRmsAbvGrd', 'GarageCars', 'FullBath','HouseStyle']
         df = df[column_names]
        
         df.dropna(subset=column_names, inplace=True)
@@ -88,7 +88,7 @@ class main(object):
     def train_test(self):
         df = self.dummification()
         y = df.pop('SaleRange')
-        X = df[['LotArea','OverallQual', 'TotRmsAbvGrd', 'GarageCars', 'FullBath']]
+        X = df[['LotArea','OverallQual', 'TotRmsAbvGrd', 'GarageCars', 'FullBath', 'HouseStyle']]
         random.seed(123)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, train_size=0.7)
         return  X_train, X_test, y_train, y_test, X, y
@@ -292,6 +292,9 @@ class main(object):
 
     def prep(self):
         X_train, X_test, y_train, y_test, X, y = self.train_test()
+
+        nombre_categoricas = ['HouseStyle']
+        nombre_numericas = ['LotArea','OverallQual', 'TotRmsAbvGrd', 'GarageCars', 'FullBath']
         numeric_preprocessor = Pipeline(
             steps=[("imputer", SimpleImputer(strategy="median")), ("scaler", StandardScaler())]
         )
@@ -309,21 +312,21 @@ class main(object):
 
         _=modelo.fit(X_train,y_train)
         modelo.score(X_test, y_test)
-
-        target_pred = modelo.predict(data_test)
+        # precision del test
+        target_pred = modelo.predict(X_test)
         print(target_pred)
-        print ("Accuracy:",metrics.accuracy_score(target_test, target_pred))
-        print ("Precision:", metrics.precision_score(target_test,target_pred,average='weighted') )
-        print ("Recall: ", metrics.recall_score(target_test,target_pred,average='weighted'))
-
-        confusion_matrix(target_pred, target_test)
-
+        print ("Accuracy:",metrics.accuracy_score(y_test, target_pred))
+        print ("Precision:", metrics.precision_score(y_test,target_pred,average='weighted') )
+        print ("Recall: ", metrics.recall_score(y_test,target_pred,average='weighted'))
+        # matriz de confusion
+        confusion_matrix(target_pred, y_test)
+         
         cv = 10
-        cv_results = cross_validate(modelo,data, target, cv=cv)
+        cv_results = cross_validate(modelo,X, y, cv=cv)
         cv_results = pd.DataFrame(cv_results)
-        print("accuracy: "+cv_results['test_score'].mean())
-        target_pred = cross_val_predict(modelo, data, target, cv = cv)
-        confusion_matrix(target, target_pred)
+        print("accuracy: "+str(cv_results['test_score'].mean()))
+        target_pred = cross_val_predict(modelo, X, y, cv = cv)
+        confusion_matrix(y, target_pred)
 
     def SVM(self):
         X_train, X_test, y_train, y_test, X, y = self.train_test()
@@ -332,5 +335,5 @@ class main(object):
 
 
 driver = main('train.csv')
-driver.explore()
+driver.prep()
 
